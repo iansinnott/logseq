@@ -1,0 +1,18 @@
+# version: "3.8"
+version: '2.4'
+# Stick with 2.x versions if you aren't using this yaml file with swarm/k8s
+# INFO: https://www.udemy.com/course/docker-mastery-for-nodejs/learn/lecture/13970470#notes
+
+services:
+  logseq:
+    # Use ./Dockerfile
+    build: .
+    # Name the image
+    image: logseq-docker
+    ports:
+      - '0.0.0.0:3001:3001'
+      - '0.0.0.0:9630:9630'
+      - '0.0.0.0:8701:8701'
+    volumes:
+      - .:/home/logseq
+    entrypoint: ['yarn', 'watch']
