@@ -39,3 +39,4 @@ charlie/
 .gitlibs
 .cache
 .clojure
+tmp
