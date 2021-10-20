@@ -142,8 +142,6 @@
         (.search "android" #js{:limit 3})
         (bean/->clj))))
 
-
-
 (defn file-search
   ([q]
    (file-search q 3))

@@ -116,11 +116,6 @@
         (conn/get-conn repo))
        (map first)))
 
-(comment
-  (println "Comment")
-  (get-pages "logseq_local_/Users/ian/MEGAsync/LogSeq")
-  (-> "logseq_local_/Users/ian/MEGAsync/LogSeq" (conn/get-conn)))
-
 (defn get-all-pages
   [repo]
   (d/q

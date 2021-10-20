@@ -662,6 +662,10 @@
                        (clear-when-saved!))}))))
    (state/set-editor-op! nil)))
 
+;; Example of the block insertion API
+(comment 
+  (api-insert-new-block! "Habberdash" {:page "test page"}))
+
 (defn api-insert-new-block!
   [content {:keys [page block-uuid sibling? before? properties custom-uuid re-render-root?]
             :or {sibling? false
