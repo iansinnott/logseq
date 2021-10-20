@@ -160,6 +160,8 @@
                                     (concat (map (fn [page-name] {:display_title page-name}) matched-pages)))]
           (ui/auto-complete
            combined-matches
+           ;; @note on-chosen-handler wants a string. So for now, this wrapper
+           ;; function just gets the relevant string and uses that.
            {:on-chosen   (fn [chosen _arg]
                            (let [f (page-handler/on-chosen-handler input id q pos format)]
                              (f (:display_title chosen) _arg)))
