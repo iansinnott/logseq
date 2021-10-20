@@ -51,11 +51,10 @@
         DELETE from blocks_fts where rowid = old.id;
         INSERT INTO blocks_fts (rowid, uuid, content, page)
         VALUES (new.id, new.uuid, new.content, new.page);
-    END;"
-                  ]]
+    END;"]]
     (doseq [trigger triggers]
-     (let [stmt (prepare db trigger)]
-       (.run ^object stmt)))))
+      (let [stmt (prepare db trigger)]
+        (.run ^object stmt)))))
 
 (defn create-blocks-table!
   [db]
@@ -147,7 +146,7 @@
   [repo ids]
   (when-let [db (get-db repo)]
     (let [ids (->> (map (fn [id] (str "'" id "'")) ids)
-               (string/join ", "))
+                   (string/join ", "))
           sql (str "DELETE from blocks WHERE id IN (" ids ")")
           stmt (prepare db sql)]
       (.run ^object stmt))))
@@ -163,6 +162,7 @@
   [repo q {:keys [limit page]}]
   (when-let [database (get-db repo)]
     (when-not (string/blank? q)
+      (js/console.log "%csearch.cljs#search-blocks%c" q "color:lime;font-size:16px;")
       (let [match? (or
                     (string/includes? q " and ")
                     (string/includes? q " & ")
@@ -171,13 +171,13 @@
                     ;; (string/includes? q " not ")
                     )
             input  (if match?
-                         (-> q
-                             (string/replace " and " " AND ")
-                             (string/replace " & " " AND ")
-                             (string/replace " or " " OR ")
-                             (string/replace " | " " OR ")
-                             (string/replace " not " " NOT "))
-                         (str "%" (string/replace q #"\s+" "%") "%"))
+                     (-> q
+                         (string/replace " and " " AND ")
+                         (string/replace " & " " AND ")
+                         (string/replace " or " " OR ")
+                         (string/replace " | " " OR ")
+                         (string/replace " not " " NOT "))
+                     (str "%" (string/replace q #"\s+" "%") "%"))
             limit  (or limit 20)
             select "select rowid, uuid, content, page from blocks_fts where "
             pg-sql (if page "page = ? and" "")
@@ -193,7 +193,7 @@
          (if page
            (.all ^object stmt (int page) input limit)
            (.all ^object stmt  input limit))
-          :keywordize-keys true)))))
+         :keywordize-keys true)))))
 
 (defn truncate-blocks-table!
   [repo]
@@ -216,6 +216,7 @@
 
 (defn query
   [repo sql]
+  (js/console.log "search.cljs#query" sql)
   (when-let [database (get-db repo)]
     (let [stmt (prepare database sql)]
       (.all ^object stmt))))
@@ -223,7 +224,12 @@
 (comment
   (def repo (first (keys @databases)))
   (query repo
-    "select * from blocks_fts")
+         "select * from blocks_fts")
 
-  (delete-db! repo)
-  )
+  (delete-db! repo))
+
+(comment
+  (let [repo (last (keys @databases))]
+    (-> repo
+        normalize-db-name)
+    #_(-> repo (query "select * from sqlite_master;"))))

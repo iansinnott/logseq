@@ -21,7 +21,8 @@
             [frontend.util.cursor :as cursor]
             [goog.dom :as gdom]
             [promesa.core :as p]
-            [rum.core :as rum]))
+            [rum.core :as rum])
+  (:import [goog.net WebSocket]))
 
 (rum/defc commands < rum/reactive
   [id format]
@@ -47,10 +48,10 @@
               [:div.has-help
                command-name
                (ui/tippy
-                 {:html doc
-                  :interactive true
-                  :fixed-position? true
-                  :position "right"}
+                {:html doc
+                 :interactive true
+                 :fixed-position? true
+                 :position "right"}
 
                 [:small (svg/help-circle)])]
 
@@ -89,6 +90,48 @@
 (defn- in-sidebar? [el]
   (not (.contains (.getElementById js/document "left-container") el)))
 
+(defonce external-source-nodes (atom []))
+
+;; @note Since the goog websocket will automatically reattempt connection we
+;; shouldn't have to worry about it getting set up before the server is online
+(defonce external-source-connection
+  (let [url "ws://localhost:5555"] ;; @todo Need to not use the dev port...
+    (atom (doto (^WebSocket WebSocket.)
+            (.listen WebSocket.EventType.OPENED #(js/console.info "Websocket opened to " url))
+            (.listen WebSocket.EventType.CLOSED #(js/console.info "Websocket closed."))
+            (.listen WebSocket.EventType.ERROR  #(js/console.error "Websocket having trouble..." %))
+            (.listen WebSocket.EventType.MESSAGE
+                     (fn [msg]
+                       (let [response (try (-> msg (.-message) (js/JSON.parse) (js->clj :keywordize-keys true))
+                                           (catch :default _
+                                             (js/console.error "Could not parse server message")
+                                             nil))]
+                         (println "Response" response)
+                         (when response
+                           (case (:type response)
+                             "rpc_response"
+                             (when (= (:name response) "query-linkable-nodes") (reset! external-source-nodes (:payload response)))
+                             (println "Unrecognized response type for response" response))))))
+            (.open url)))))
+
+(defn external-source-connection-send
+  [data]
+  (try
+    (-> @external-source-connection (.send (js/JSON.stringify (clj->js data))))
+    (catch :default err
+      (do (js/log.error "Payload could not be encoded as JSON." data)
+          (js/log.error "Full error follows:" err)))))
+
+(comment
+  (set! (.-externalSourceConnection js/window @external-source-connection))
+  (external-source-connection-send
+   {:type "rpc"
+    :name "query-linkable-nodes"
+    :params ["android" 5]
+    :id "identifier..." ;; (optional)
+    })
+  (editor-handler/get-matched-pages "android"))
+
 (rum/defc page-search < rum/reactive
   {:will-unmount (fn [state] (reset! editor-handler/*selected-text nil) state)}
   [id format]
@@ -106,22 +149,34 @@
                    (util/safe-subs edit-content pos current-pos))
                  (when (> (count edit-content) current-pos)
                    (util/safe-subs edit-content pos current-pos)))
-              matched-pages (when-not (string/blank? q)
-                              (editor-handler/get-matched-pages q))]
+              matched-pages (if (string/blank? q)
+                              (reset! external-source-nodes []) ;; Clear external search when blank
+                              (do
+                                (external-source-connection-send
+                                 {:type "rpc"
+                                  :name "query-linkable-nodes"
+                                  :params [q 5]})
+                                (editor-handler/get-matched-pages q)))
+              combined-matches (->> (rum/react external-source-nodes)
+                                    (concat (map (fn [page-name] {:display_title page-name}) matched-pages)))]
           (ui/auto-complete
-           matched-pages
+           combined-matches
            {:on-chosen   (page-handler/on-chosen-handler input id q pos format)
             :on-enter    #(page-handler/page-not-exists-handler input id q current-pos)
             :item-render (fn [page-name chosen?]
-                           [:div.preview-trigger-wrapper
-                            (block/page-preview-trigger
-                             {:children        [:div (search/highlight-exact-query page-name q)]
-                              :open?           chosen?
-                              :manual?         true
-                              :fixed-position? true
-                              :tippy-distance  24
-                              :tippy-position  (if sidebar? "left" "right")}
-                             page-name)])
+                           (let [display-title (:display_title page-name)
+                                 url (:url page-name)]
+                             [:div.preview-trigger-wrapper
+                              (block/page-preview-trigger
+                               {:children        [:div
+                                                  [:div (search/highlight-exact-query display-title q)]
+                                                  (when url [:div {:class "text-xs opacity-60"} url])]
+                                :open?           chosen?
+                                :manual?         true
+                                :fixed-position? true
+                                :tippy-distance  24
+                                :tippy-position  (if sidebar? "left" "right")}
+                               display-title)]))
             :empty-div   [:div.text-gray-500.text-sm.px-4.py-2 "Search for a page"]
             :class       "black"}))))))
 

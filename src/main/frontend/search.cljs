@@ -126,13 +126,23 @@
                            (bean/->clj))]
            ;; TODO: add indexes for highlights
            (->> (map
-                  (fn [{:keys [item]}]
-                    (:name item))
+                 (fn [{:keys [item]}]
+                   (:name item))
                  result)
                 (remove nil?)
                 (distinct)
                 (filter (fn [name]
                           (exact-matched? q name))))))))))
+
+(comment
+  (page-search "android")
+  (let [repo (state/get-current-repo)
+        index (get-in @indices [repo :pages])]
+    (-> index
+        (.search "android" #js{:limit 3})
+        (bean/->clj))))
+
+
 
 (defn file-search
   ([q]
@@ -211,11 +221,11 @@
    (when repo
      (when-let [engine (get-engine repo)]
        (let [pages (search-db/make-pages-indice!)]
-        (p/let [blocks (protocol/rebuild-blocks-indice! engine)]
-          (let [result {:pages pages
-                        :blocks blocks}]
-            (swap! indices assoc repo result)
-            indices)))))))
+         (p/let [blocks (protocol/rebuild-blocks-indice! engine)]
+           (let [result {:pages pages
+                         :blocks blocks}]
+             (swap! indices assoc repo result)
+             indices)))))))
 
 (defn reset-indice!
   [repo]

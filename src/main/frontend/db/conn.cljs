@@ -41,6 +41,10 @@
          @conn
          conn)))))
 
+(comment
+  (keys @conns)
+  (datascript-db "logseq_local_/Users/ian/MEGAsync/LogSeq"))
+
 (defn reset-conn! [conn db]
   (reset! conn db))
 
