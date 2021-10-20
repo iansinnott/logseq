@@ -173,7 +173,10 @@
                                  display-title (:display_title chosen)]
                              (f display-title _arg)
                              (when (:url chosen)
-                               (js/console.log (str  "%cURL TIME! " (:url chosen)) "color:lime;")
+                               (js/console.log (str  "%cDefine Linkage! " (:url chosen)) "color:lime;")
+                               ;; @note This ugliness is to cover up the fact that I don't yet know how to hook into the actual page creation.
+                               ;; What we _want_ is to add a property to the page once created. 
+                               ;; If you call this directly without the timeout the page will not yet exist and it will. Thus the wait.
                                (js/setTimeout
                                 #(augmentation/append-page-properties! display-title {:external/url (:url chosen)})
                                 1000))))
