@@ -96,7 +96,8 @@
 ;; @note Since the goog websocket will automatically reattempt connection we
 ;; shouldn't have to worry about it getting set up before the server is online
 (defonce external-source-connection
-  (let [url "ws://localhost:5555"] ;; @todo Need to not use the dev port...
+  (let [url (if config/dev? "ws://localhost:5555" "ws://localhost:44444")]
+    (when config/dev? (println "DEBUG: Running on socket server" url))
     (atom (doto (^WebSocket WebSocket.)
             (.listen WebSocket.EventType.OPENED #(js/console.info "Websocket opened to " url))
             (.listen WebSocket.EventType.CLOSED #(js/console.info "Websocket closed."))
