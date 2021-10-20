@@ -149,19 +149,20 @@
                    (util/safe-subs edit-content pos current-pos))
                  (when (> (count edit-content) current-pos)
                    (util/safe-subs edit-content pos current-pos)))
-              matched-pages (if (string/blank? q)
-                              (reset! external-source-nodes []) ;; Clear external search when blank
-                              (do
-                                (external-source-connection-send
-                                 {:type "rpc"
-                                  :name "query-linkable-nodes"
-                                  :params [q 5]})
-                                (editor-handler/get-matched-pages q)))
-              combined-matches (->> (rum/react external-source-nodes)
+              matched-pages (when-not (string/blank? q)
+                              (editor-handler/get-matched-pages q))
+              _ (when-not (string/blank? q)
+                  (external-source-connection-send
+                   {:type "rpc"
+                    :name "query-linkable-nodes"
+                    :params [q 5]}))
+              combined-matches (->> @external-source-nodes
                                     (concat (map (fn [page-name] {:display_title page-name}) matched-pages)))]
           (ui/auto-complete
            combined-matches
-           {:on-chosen   (page-handler/on-chosen-handler input id q pos format)
+           {:on-chosen   (fn [chosen _arg]
+                           (let [f (page-handler/on-chosen-handler input id q pos format)]
+                             (f (:display_title chosen) _arg)))
             :on-enter    #(page-handler/page-not-exists-handler input id q current-pos)
             :item-render (fn [page-name chosen?]
                            (let [display-title (:display_title page-name)
