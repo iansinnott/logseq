@@ -27,6 +27,7 @@
         "typescript": "^4.4.3"
     },
     "scripts": {
+        "just-build-plz": "yarn install && npx gulp build && yarn release && yarn cljs:build-electron && (cd static; yarn; yarn electron:make)",
         "watch": "run-p gulp:watch cljs:watch",
         "electron-watch": "run-p gulp:watch cljs:electron-watch",
         "app-watch": "run-p gulp:watch cljs:app-watch",
