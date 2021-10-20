@@ -21,7 +21,8 @@
             [frontend.util.cursor :as cursor]
             [goog.dom :as gdom]
             [promesa.core :as p]
-            [rum.core :as rum])
+            [rum.core :as rum]
+            [frontend.augmentation.core :as augmentation])
   (:import [goog.net WebSocket]))
 
 (rum/defc commands < rum/reactive
@@ -151,20 +152,31 @@
                    (util/safe-subs edit-content pos current-pos)))
               matched-pages (when-not (string/blank? q)
                               (editor-handler/get-matched-pages q))
+
+              ;; Send off a request to the server to get search results
               _ (when-not (string/blank? q)
                   (external-source-connection-send
                    {:type "rpc"
                     :name "query-linkable-nodes"
-                    :params [q 5]}))
-              combined-matches (->> @external-source-nodes
+                    :params [q 15]}))
+
+              ;; @note I think this line (using rum/react) caused some issues in
+              ;; the past, be aware
+              combined-matches (->> (rum/react external-source-nodes)
                                     (concat (map (fn [page-name] {:display_title page-name}) matched-pages)))]
           (ui/auto-complete
            combined-matches
            ;; @note on-chosen-handler wants a string. So for now, this wrapper
            ;; function just gets the relevant string and uses that.
            {:on-chosen   (fn [chosen _arg]
-                           (let [f (page-handler/on-chosen-handler input id q pos format)]
-                             (f (:display_title chosen) _arg)))
+                           (let [f (page-handler/on-chosen-handler input id q pos format)
+                                 display-title (:display_title chosen)]
+                             (f display-title _arg)
+                             (when (:url chosen)
+                               (js/console.log (str  "%cURL TIME! " (:url chosen)) "color:lime;")
+                               (js/setTimeout
+                                #(augmentation/append-page-properties! display-title {:external/url (:url chosen)})
+                                1000))))
             :on-enter    #(page-handler/page-not-exists-handler input id q current-pos)
             :item-render (fn [page-name chosen?]
                            (let [display-title (:display_title page-name)
