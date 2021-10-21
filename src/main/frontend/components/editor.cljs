@@ -121,8 +121,8 @@
   (try
     (-> @external-source-connection (.send (js/JSON.stringify (clj->js data))))
     (catch :default err
-      (do (js/log.error "Payload could not be encoded as JSON." data)
-          (js/log.error "Full error follows:" err)))))
+      (do (js/console.error "Payload could not be encoded as JSON." data)
+          (js/console.error "Full error follows:" err)))))
 
 (comment
   (set! (.-externalSourceConnection js/window @external-source-connection))
