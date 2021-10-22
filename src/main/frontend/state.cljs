@@ -36,7 +36,7 @@
       :repo/changed-files nil
       :nfs/user-granted? {}
       :nfs/refreshing? nil
-      :instrument/disabled? (storage/get "instrument-disabled")
+      :instrument/disabled? true
       ;; TODO: how to detect the network reliably?
       :network/online? true
       :indexeddb/support? true
