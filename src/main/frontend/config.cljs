@@ -354,6 +354,14 @@
     path
     (util/node-path.join (get-repo-dir repo-url) path)))
 
+(defn user-home-path
+  [& s]
+  (when-let [get-path (-> js/apis .-userHomePath)]
+    (apply get-path (clj->js s))))
+
+(goog-define USER-REPO-PATH "logseq-default-graph")
+(defonce default-repo (str local-db-prefix (user-home-path USER-REPO-PATH)))
+
 (defn get-file-path
   [repo-url relative-path]
   (when (and repo-url relative-path)

@@ -52,7 +52,7 @@
              :file/last-modified-at mtime
              :file/size             size
              :file/content content})
-       result)
+          result)
 
      electron?
      (map (fn [{:keys [path stat content]}]
@@ -61,7 +61,7 @@
                :file/last-modified-at mtime
                :file/size             size
                :file/content content}))
-       result)
+          result)
 
      :else
      (let [result (flatten (bean/->clj result))]
@@ -122,6 +122,7 @@
         mobile-native? (mobile-util/is-native-platform?)
         nfs? (and (not electron?)
                   (not mobile-native?))]
+    (js/console.log (str "ls-dir-files-with-handler! %cjello") "color:red;" (clj->js @path-handles))
     ;; TODO: add ext filter to avoid loading .git or other ignored file handlers
     (->
      (p/let [result (fs/open-dir (fn [path handle]

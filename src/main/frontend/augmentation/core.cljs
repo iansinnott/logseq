@@ -1,11 +1,19 @@
 (ns frontend.augmentation.core
   (:require
    [clojure.string :as string]
+   [promesa.core :as p]
    [frontend.db :as db]
    [frontend.db.model :as db-model]
    [frontend.state :as state]
    [frontend.util.property :as property]
-   [frontend.handler.editor :as editor-handler]))
+   [frontend.handler.ui :as ui-handler]
+   [frontend.handler.editor :as editor-handler]
+   [frontend.handler.repo :as repo]
+   [frontend.handler.page :as page-handler]
+   [frontend.handler.web.nfs :as nfs-handler]
+
+   ;;
+   ))
 
 (defn- get-page-by-name
   "Get a page object by its name.
@@ -104,3 +112,39 @@
 
   ;;
   )
+
+;; @note This does not fully initialize the repo in the UI. See the call site
+;; for additional work that is needed in order for the UI to fully update and
+;; recognize the repo as added.
+(defn init-repo
+  "Initialize a repo (directory on disk that stores data)"
+  [repo-name]
+  (p/do!
+   (state/set-current-repo! repo-name)
+   (db/start-db-conn! nil repo-name)
+   (repo/create-config-file-if-not-exists repo-name)
+   (repo/create-contents-file repo-name)
+   (repo/create-favorites-file repo-name)
+   (repo/create-custom-theme repo-name)
+   (ui-handler/re-render-root!)
+   (repo/re-index! nfs-handler/rebuild-index! page-handler/create-today-journal!)))
+
+(comment
+  (state/get-current-repo)
+  (state/set-current-repo! nil) ;; Reset to local repo state
+
+  ;; @note This works to set the local repo but is unfortunately not a full
+  ;; measure. There's still more going on. It seems to be that the :me state key
+  ;; is not populated.
+  (let [repo "logseq_local_/Users/ian/MEGAsync/LogSeq-dev"]
+    (p/do!
+     (state/set-db-restoring! true)
+     (state/set-current-repo! repo)
+     (db/start-db-conn! nil repo)
+     (repo/create-config-file-if-not-exists repo)
+     (repo/create-contents-file repo)
+     (repo/create-favorites-file repo)
+     (repo/create-custom-theme repo)
+     (state/set-db-restoring! false)
+     (ui-handler/re-render-root!)
+     (repo/re-index! nfs-handler/rebuild-index! page-handler/create-today-journal!))))

@@ -13,6 +13,7 @@
             [frontend.handler.events :as events]
             [frontend.handler.file :as file-handler]
             [frontend.handler.notification :as notification]
+            [frontend.augmentation.core]
             [frontend.handler.page :as page-handler]
             [frontend.handler.repo :as repo-handler]
             [frontend.handler.ui :as ui-handler]
@@ -165,6 +166,10 @@
         (seq nfs-dbs)
         nfs-dbs
 
+        ;; @todo This is for testing
+        ;; (= 1 1)
+        ;; [{:url "logseq_local_/Users/ian/MEGAsync/LogSeq-dev", :nfs? true}]
+
         :else
         [{:url config/local-repo
           :example? true}]))))
@@ -200,16 +205,33 @@
     (on-load-events)
     (set-network-watcher!)
 
-    (util/indexeddb-check?
-     (fn [_error]
-       (notification/show! "Sorry, it seems that your browser doesn't support IndexedDB, we recommend to use latest Chrome(Chromium) or Firefox(Non-private mode)." :error false)
-       (state/set-indexedb-support! false)))
+    ;; @note We'll just assume indexed db for now
+    #_(util/indexeddb-check?
+       (fn [_error]
+         (notification/show! "Sorry, it seems that your browser doesn't support IndexedDB, we recommend to use latest Chrome(Chromium) or Firefox(Non-private mode)." :error false)
+         (state/set-indexedb-support! false)))
 
     (events/run!)
 
-    (p/let [repos (get-repos)]
-      (state/set-repos! repos)
-      (restore-and-setup! me repos logged? db-schema)
+    ;; @note This loads in existing repo
+    (p/let [repos (get-repos)
+            _ (js/console.log "%crepo londa" "color:red;" (clj->js repos))
+            default-repo-configured? (-> repos
+                                         (->> (filter (fn [x] (= (:url x) config/default-repo))))
+                                         first
+                                         boolean)]
+      (if-not default-repo-configured?
+        (do
+          (println "[======== Need to configure default repo ========]")
+          (let [new-repos (-> repos (conj {:url config/default-repo}) vec)]
+            (frontend.augmentation.core/init-repo config/default-repo)
+            (state/set-repos! new-repos)
+            (restore-and-setup! me new-repos logged? db-schema)))
+        (do
+          (println "[======== Repos Restored ========]")
+          (state/set-repos! repos)
+          (restore-and-setup! me repos logged? db-schema)))
+
       (when (mobile/is-native-platform?)
         (p/do! (mobile/hide-splash))))
 
