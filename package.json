@@ -32,6 +32,7 @@
         "electron-watch": "run-p gulp:watch cljs:electron-watch",
         "app-watch": "run-p gulp:watch cljs:app-watch",
         "release": "run-s gulp:build cljs:release",
+        "release-devgraph": "yarn gulp:build && yarn cljs:release --config-merge '{:closure-defines {frontend.config/USER-REPO-PATH \"tmp/DevGraph\"}}'",
         "release-app": "run-s gulp:build cljs:release-app",
         "dev-release-app": "run-s gulp:build cljs:dev-release-app",
         "dev-electron-app": "gulp electron",
