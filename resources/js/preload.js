@@ -1,11 +1,20 @@
 const fs = require('fs')
 const path = require('path')
-const { ipcRenderer, contextBridge, shell, clipboard, webFrame } = require('electron')
+const os = require('os')
+const {
+  app,
+  ipcRenderer,
+  contextBridge,
+  shell,
+  clipboard,
+  webFrame,
+} = require('electron')
 
 const IS_MAC = process.platform === 'darwin'
 const IS_WIN32 = process.platform === 'win32'
+const HOME = os.homedir()
 
-function getFilePathFromClipboard () {
+function getFilePathFromClipboard() {
   if (IS_WIN32) {
     const rawFilePath = clipboard.read('FileNameW')
     return rawFilePath.replace(new RegExp(String.fromCharCode(0), 'g'), '')
@@ -17,6 +26,10 @@ function getFilePathFromClipboard () {
 }
 
 contextBridge.exposeInMainWorld('apis', {
+  userHomePath: (...dirpath) => {
+    return path.resolve(HOME, ...dirpath)
+  },
+
   doAction: async (arg) => {
     return await ipcRenderer.invoke('main', arg)
   },
@@ -50,7 +63,7 @@ contextBridge.exposeInMainWorld('apis', {
     await ipcRenderer.invoke('check-for-updates', ...args)
   },
 
-  setUpdatesCallback (cb) {
+  setUpdatesCallback(cb) {
     if (typeof cb !== 'function') return
 
     const channel = 'updates-callback'
@@ -58,19 +71,19 @@ contextBridge.exposeInMainWorld('apis', {
     ipcRenderer.on(channel, cb)
   },
 
-  installUpdatesAndQuitApp () {
+  installUpdatesAndQuitApp() {
     ipcRenderer.invoke('install-updates', true)
   },
 
-  async openExternal (url, options) {
+  async openExternal(url, options) {
     await shell.openExternal(url, options)
   },
 
-  async openPath (path) {
+  async openPath(path) {
     await shell.openPath(path)
   },
 
-  showItemInFolder (fullpath) {
+  showItemInFolder(fullpath) {
     if (IS_WIN32) {
       shell.openPath(path.dirname(fullpath))
     } else {
@@ -83,7 +96,7 @@ contextBridge.exposeInMainWorld('apis', {
    *
    * @param {string} html html file with embedded state
    */
-  exportPublishAssets (html, customCSSPath, repoPath, assetFilenames) {
+  exportPublishAssets(html, customCSSPath, repoPath, assetFilenames) {
     ipcRenderer.invoke(
       'export-publish-assets',
       html,
@@ -101,7 +114,7 @@ contextBridge.exposeInMainWorld('apis', {
    * @param from?
    * @returns {Promise<void>}
    */
-  async copyFileToAssets (repoPathRoot, to, from) {
+  async copyFileToAssets(repoPathRoot, to, from) {
     if (from && fs.statSync(from).isDirectory()) {
       throw new Error('not support copy directory')
     }
@@ -136,7 +149,7 @@ contextBridge.exposeInMainWorld('apis', {
     }
   },
 
-  toggleMaxOrMinActiveWindow (isToggleMin = false) {
+  toggleMaxOrMinActiveWindow(isToggleMin = false) {
     ipcRenderer.invoke('toggle-max-or-min-active-win', isToggleMin)
   },
 
@@ -146,15 +159,15 @@ contextBridge.exposeInMainWorld('apis', {
    * @param args
    * @private
    */
-  async _callApplication (type, ...args) {
+  async _callApplication(type, ...args) {
     return await ipcRenderer.invoke('call-application', type, ...args)
   },
 
   getFilePathFromClipboard,
 
-  setZoomFactor (factor) {
+  setZoomFactor(factor) {
     webFrame.setZoomFactor(factor)
   },
 
-  isAbsolutePath: path.isAbsolute.bind(path)
+  isAbsolutePath: path.isAbsolute.bind(path),
 })
