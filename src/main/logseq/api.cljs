@@ -527,3 +527,25 @@
   []
   (p/let [_ (el/persist-dbs!)
           _ (reset! handler/triggered? true)]))
+
+;; A wrapper round update-state! to be called from JS
+;;
+;;  logseq.api.update_state(['ui/theme'], () => 'white')
+;;  logseq.api.update_state('ui/theme', () => 'white')
+;;
+;; @note It's understandable that this was not exposed before, because
+;; interacting with state directly requries knowledge of state shape, which is
+;; an implementation detail the API consumer should not have to worry about.
+;; However, for our use case we already need to know how state is laid out so
+;; this just provides an API for that while being coherent with the existing
+;; extensibility options.
+(defn ^:export update_state
+  [js-keypath js-f]
+  (let [keypath (if (string? js-keypath)
+                  (keyword js-keypath)
+                  (-> js-keypath
+                      (js->clj :keywordize-keys true)
+                      (->> (map #(if (string? %) (keyword %) %))
+                           (vec))))
+        f (fn [x] (-> x clj->js js-f (js->clj :keywordize-keys true)))]
+    (clj->js (state/update-state! keypath f))))
