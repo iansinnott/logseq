@@ -359,7 +359,7 @@
   (when-let [get-path (-> js/apis .-userHomePath)]
     (apply get-path (clj->js s))))
 
-(goog-define USER-REPO-PATH "logseq-default-graph")
+(goog-define USER-REPO-PATH "Logseq/Knowledge")
 (defonce default-repo (str local-db-prefix (user-home-path USER-REPO-PATH)))
 
 (defn get-file-path
