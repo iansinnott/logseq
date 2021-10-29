@@ -39,10 +39,10 @@
            :on-change (fn [e]
                         (reset! email (util/evalue e)))}]]]]
       (ui/button
-        "Submit"
-        :on-click
-        (fn []
-          (user-handler/set-email! @email)))
+       "Submit"
+       :on-click
+       (fn []
+         (user-handler/set-email! @email)))
 
       [:hr]
 
@@ -63,10 +63,10 @@
            :on-change (fn [e]
                         (reset! cors (util/evalue e)))}]]]]
       (ui/button
-        "Submit"
-        :on-click
-        (fn []
-          (user-handler/set-cors! @cors)))
+       "Submit"
+       :on-click
+       (fn []
+         (user-handler/set-cors! @cors)))
 
       [:hr]
 
@@ -92,10 +92,10 @@
 
      [:div.ctls.flex.items-center
       (ui/button
-        (if update-pending? "Checking ..." "Check for updates")
-        :class "text-sm p-1 mr-3"
-        :disabled update-pending?
-        :on-click #(js/window.apis.checkForUpdates false))
+       (if update-pending? "Checking ..." "Check for updates")
+       :class "text-sm p-1 mr-3"
+       :disabled update-pending?
+       :on-click #(js/window.apis.checkForUpdates false))
 
       [:span version]]
 
@@ -356,6 +356,13 @@
           logical-outdenting?
           config-handler/toggle-logical-outdenting!))
 
+(defn flashcards-row [t enable-flashcards?]
+  (toggle "enable_flashcards"
+          (t :settings-page/enable-flashcards)
+          enable-flashcards?
+          (fn []
+            (config-handler/set-config! :feature/enable-flashcards? (not enable-flashcards?)))))
+
 (defn tooltip-row [t enable-tooltip?]
   (toggle "enable_tooltip"
           (t :settings-page/enable-tooltip)
@@ -448,10 +455,10 @@
      [:div.mt-1.sm:mt-0.sm:col-span-2
       [:div
        (ui/button
-         (t :settings-page/shortcut-settings)
-         :class "text-sm p-1"
-         :style {:margin-top "0px"}
-         :on-click h)]])])
+        (t :settings-page/shortcut-settings)
+        :class "text-sm p-1"
+        :style {:margin-top "0px"}
+        :on-click h)]])])
 
 (defn zotero-settings-row [t]
   [:div.it.sm:grid.sm:grid-cols-3.sm:gap-4.sm:items-start
@@ -461,13 +468,13 @@
    [:div.mt-1.sm:mt-0.sm:col-span-2
     [:div
      (ui/button
-       "Zotero settings"
-       :class "text-sm p-1"
-       :style {:margin-top "0px"}
-       :on-click
-       (fn []
-         (state/close-settings!)
-         (route-handler/redirect! {:to :zotero-setting})))]]])
+      "Zotero settings"
+      :class "text-sm p-1"
+      :style {:margin-top "0px"}
+      :on-click
+      (fn []
+        (state/close-settings!)
+        (route-handler/redirect! {:to :zotero-setting})))]]])
 
 (defn auto-push-row [t current-repo enable-git-auto-push?]
   (when (string/starts-with? current-repo "https://")
@@ -483,7 +490,7 @@
           (t :settings-page/disable-sentry)
           (not instrument-disabled?)
           (fn [] (instrument/disable-instrument
-                 (not instrument-disabled?)))
+                  (not instrument-disabled?)))
           [:span.text-sm.opacity-50 "Logseq will never collect your local graph database or sell your data."]))
 
 (defn clear-cache-row [t]
@@ -494,9 +501,9 @@
    [:div.mt-1.sm:mt-0.sm:col-span-2
     [:div.max-w-lg.rounded-md.sm:max-w-xs
      (ui/button
-       (t :settings-page/clear)
-       :class "text-sm p-1"
-       :on-click handler/clear-cache!)]]])
+      (t :settings-page/clear)
+      :class "text-sm p-1"
+      :on-click handler/clear-cache!)]]])
 
 (defn version-row [t version]
   [:div.it.app-updater.sm:grid.sm:grid-cols-5.sm:gap-4.sm:items-center
@@ -543,6 +550,7 @@
         instrument-disabled? (state/sub :instrument/disabled?)
         logical-outdenting? (state/logical-outdenting?)
         enable-tooltip? (state/enable-tooltip?)
+        enable-flashcards?  (-> (state/get-config) (get :feature/enable-flashcards? false))
         enable-git-auto-push? (state/enable-git-auto-push? current-repo)
         ;; enable-block-timestamps? (state/enable-block-timestamps?)
         show-brackets? (state/show-brackets?)
@@ -600,6 +608,7 @@
             (show-brackets-row t show-brackets?)
             (when (util/electron?) (switch-spell-check-row t))
             (outdenting-row t logical-outdenting?)
+            (flashcards-row t enable-flashcards?)
             (tooltip-row t enable-tooltip?)
             (timetracking-row t enable-timetracking?)
             (journal-row t enable-journals?)
@@ -670,8 +679,8 @@
                 [:div.mt-1.sm:mt-0.sm:col-span-2
                  [:div.max-w-lg.rounded-md.sm:max-w-xs
                   (ui/button (t :user/delete-your-account)
-                    :on-click (fn []
-                                (ui-handler/toggle-settings-modal!)
-                                (js/setTimeout #(state/set-modal! delete-account-confirm))))]]]])]
+                             :on-click (fn []
+                                         (ui-handler/toggle-settings-modal!)
+                                         (js/setTimeout #(state/set-modal! delete-account-confirm))))]]]])]
 
            nil)]]])))

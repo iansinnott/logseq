@@ -248,6 +248,13 @@
   []
   (sub :config))
 
+(defn sub-current-config
+  "Just a helper for subscribing to config values in the current repo. This
+  could just as well be accomplished by constructing the path at call site, but
+  wrapping it up like this will hopefully make for a cleaner codeabase."
+  [^Keyword k]
+  (sub [:config (get-current-repo) k]))
+
 (defn get-custom-css-link
   []
   (:custom-css-url (get-config)))
@@ -1163,8 +1170,8 @@
   (if (util/mobile?)
     false
     (get (get (sub-config) (get-current-repo))
-        :ui/enable-tooltip?
-        true)))
+         :ui/enable-tooltip?
+         true)))
 
 (defn show-command-doc?
   []
@@ -1175,6 +1182,7 @@
 (defn set-config!
   [repo-url value]
   (set-state! [:config repo-url] value))
+
 
 (defn get-git-auto-push?
   ([]

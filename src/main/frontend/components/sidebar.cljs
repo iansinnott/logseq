@@ -149,7 +149,7 @@
         (for [name favorites]
           (when-not (string/blank? name)
             (when (db/entity [:block/name (util/safe-lower-case name)])
-                (favorite-item t name))))]))))
+              (favorite-item t name))))]))))
 
 (rum/defc recent-pages
   < rum/reactive db-mixins/query
@@ -187,13 +187,23 @@
      (when (and num (not (zero? num)))
        [:span.ml-3.inline-block.py-0.5.px-3.text-xs.font-medium.rounded-full.fade-in num])]))
 
+(comment
+  (let [kp [:config (state/get-current-repo) :feature/enable-flashcards?]]
+    (-> @state/state (get-in kp)))
+  (->
+   @state/state
+   :config
+   (get (state/get-current-repo))
+   :feature/enable-flashcards?))
+
 (rum/defc sidebar-nav < rum/reactive
   [route-match close-modal-fn]
   (rum/with-context [[t] i18n/*tongue-context*]
     (let [active? (fn [route] (= route (get-in route-match [:data :name])))
           page-active? (fn [page]
                          (= page (get-in route-match [:parameters :path :name])))
-          left-sidebar? (state/sub :ui/left-sidebar-open?)]
+          left-sidebar? (state/sub :ui/left-sidebar-open?)
+          show-flashcards? (state/sub-current-config :feature/enable-flashcards?)]
       (when left-sidebar?
         [:div.left-sidebar-inner.flex-1.flex.flex-col.min-h-0
          [:div.flex.flex-col.pb-4.wrap
@@ -203,7 +213,8 @@
             (ui/icon "calendar mr-3" {:style {:font-size 20}})
             [:span.flex-1 "Journals"]]
 
-           (flashcards)
+           (when show-flashcards?
+             (flashcards))
 
            [:a.item.group.flex.items-center.px-2.py-2.text-sm.font-medium.rounded-md {:href (rfe/href :graph)}
             (ui/icon "hierarchy mr-3" {:style {:font-size 20}})
@@ -386,7 +397,7 @@
                   :exit 300}}
        links
         ;; (custom-context-menu-content)
-))))
+       ))))
 
 (rum/defc new-block-mode < rum/reactive
   []
