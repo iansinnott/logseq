@@ -155,7 +155,10 @@
                               (editor-handler/get-matched-pages q))
 
               ;; Send off a request to the server to get search results
-              _ (when-not (string/blank? q)
+              ;; @note Just as with the main search UI we ignore super short
+              ;; queries. I would ignore up to 2 chars but that doesn't work
+              ;; well for 中文.
+              _ (when (and (not (string/blank? q)) (-> (count q) (> 1)))
                   (external-source-connection-send
                    {:type "rpc"
                     :name "query-linkable-nodes"
