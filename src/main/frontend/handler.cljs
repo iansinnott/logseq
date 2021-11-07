@@ -215,25 +215,26 @@
 
     ;; @note This loads in existing repo
     (p/let [repos (get-repos)
-            _ (js/console.log "%crepo londa" "color:red;" (clj->js repos))
-            default-repo-configured? (-> repos
-                                         (->> (filter (fn [x] (= (:url x) config/default-repo))))
-                                         first
-                                         boolean)]
+            default-repo-configured?
+            (-> repos
+                (->> (filter (fn [x] (= (:url x) config/default-repo))))
+                first
+                boolean)]
+      (js/console.log "%crepo londa" "color:red;" (clj->js repos))
+      (state/set-repos! repos)
+      (restore-and-setup! me repos logged? db-schema)
+      (when (mobile/is-native-platform?)
+        (p/do! (mobile/hide-splash)))
+
+      ;; @todo The idea here is to set up the initial Repo. it has been giving us trouble.
       (if-not default-repo-configured?
         (do
           (println "[======== Need to configure default repo ========]")
-          (let [new-repos (-> repos (conj {:url config/default-repo}) vec)]
-            (frontend.augmentation.core/init-repo config/default-repo)
-            (state/set-repos! new-repos)
-            (restore-and-setup! me new-repos logged? db-schema)))
-        (do
-          (println "[======== Repos Restored ========]")
-          (state/set-repos! repos)
-          (restore-and-setup! me repos logged? db-schema)))
-
-      (when (mobile/is-native-platform?)
-        (p/do! (mobile/hide-splash))))
+          #_(let [new-repos (-> repos (conj {:url config/default-repo}) vec)]
+              (frontend.augmentation.core/init-repo config/default-repo)
+              (state/set-repos! new-repos)
+              (restore-and-setup! me new-repos logged? db-schema)))
+        (println "[======== Repos Restored ========]")))
 
     (reset! db/*sync-search-indice-f search/sync-search-indice!)
     (db/run-batch-txs!)

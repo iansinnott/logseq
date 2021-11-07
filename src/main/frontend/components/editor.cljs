@@ -126,6 +126,7 @@
 
 (comment
   (set! (.-externalSourceConnection js/window @external-source-connection))
+  (augmentation/append-page-properties! "blank page" {:uncloud/other-prop "What are we talking about?"})
   (external-source-connection-send
    {:type "rpc"
     :name "query-linkable-nodes"
@@ -182,7 +183,8 @@
                                ;; What we _want_ is to add a property to the page once created. 
                                ;; If you call this directly without the timeout the page will not yet exist and it will. Thus the wait.
                                (js/setTimeout
-                                #(augmentation/append-page-properties! display-title {:external/url (:url chosen)})
+                                #(augmentation/append-page-properties! display-title {:uncloud/url (:url chosen)
+                                                                                      :uncloud/uid (:uid chosen)})
                                 1000))))
             :on-enter    #(page-handler/page-not-exists-handler input id q current-pos)
             :item-render (fn [page-name chosen?]

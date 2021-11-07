@@ -213,6 +213,7 @@
             (ui/icon "calendar mr-3" {:style {:font-size 20}})
             [:span.flex-1 "Journals"]]
 
+           ;; @note This does not update without a refresh. Odd.
            (when show-flashcards?
              (flashcards))
 
